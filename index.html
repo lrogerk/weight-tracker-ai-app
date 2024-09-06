@@ -171,20 +171,63 @@
             flex-direction: column;
         }
         #weightForm input {
-            margin-bottom: 10px;
-            padding: 5px;
+            padding: 10px;
             border: 1px solid #ddd;
             border-radius: 3px;
+            font-size: 16px;
+            margin-bottom: 15px;
         }
-        #weightForm button {
+        #saveWeight {
             background-color: #2196F3;
             color: white;
             border: none;
             padding: 10px;
+            border-radius: 50%;
             cursor: pointer;
-            border-radius: 3px;
+            font-size: 20px;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-left: auto;
         }
-        #weightForm button:hover {
+        #saveWeight:hover {
+            background-color: #0b7dda;
+        }
+        .form-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .form-row label {
+            flex: 1;
+        }
+        .form-row input {
+            flex: 2;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-size: 16px;
+        }
+        #saveUserInfo {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-left: auto;
+            margin-top: 15px;
+        }
+        #saveUserInfo:hover {
             background-color: #0b7dda;
         }
     </style>
@@ -209,7 +252,7 @@
     
     <div class="footer">
         <div class="footer-buttons">
-            <button>
+            <button id="shareBtn">
                 <i class="fas fa-share-alt"></i>
                 <span>分享</span>
             </button>
@@ -230,10 +273,15 @@
             <span class="close">&times;</span>
             <h2>我的信息</h2>
             <form id="userInfoForm">
-                <input type="text" id="name" placeholder="姓名" required>
-                <input type="number" id="age" placeholder="年龄" required>
-                <input type="number" id="height" placeholder="身高 (cm)" step="0.1" required>
-                <button type="submit">保存</button>
+                <div class="form-row">
+                    <label for="name">姓名：</label>
+                    <input type="text" id="name" required>
+                </div>
+                <div class="form-row">
+                    <label for="height">身高（cm）：</label>
+                    <input type="number" id="height" step="0.1" required>
+                </div>
+                <button type="submit" id="saveUserInfo"><i class="fas fa-save"></i></button>
             </form>
         </div>
     </div>
@@ -245,7 +293,7 @@
             <h2>新增体重</h2>
             <form id="weightForm">
                 <input type="number" id="weight" placeholder="体重 (kg)" step="0.1" required>
-                <button type="submit">保存</button>
+                <button type="submit" id="saveWeight"><i class="fas fa-save"></i></button>
             </form>
         </div>
     </div>
@@ -381,7 +429,6 @@
             var userInfo = JSON.parse(localStorage.getItem("userInfo"));
             if (userInfo) {
                 document.getElementById("name").value = userInfo.name || "";
-                document.getElementById("age").value = userInfo.age || "";
                 document.getElementById("height").value = userInfo.height || "";
                 document.getElementById("userName").textContent = userInfo.name || "用户";
             }
@@ -391,12 +438,12 @@
         userInfoForm.onsubmit = function(e) {
             e.preventDefault();
             var name = document.getElementById("name").value;
-            var age = document.getElementById("age").value;
             var height = document.getElementById("height").value;
 
-            var userInfo = {name, age, height};
+            var userInfo = {name, height};
             localStorage.setItem("userInfo", JSON.stringify(userInfo));
             
+            document.getElementById("userName").textContent = name || "用户";
             myModal.style.display = "none";
             alert("信息已保存");
         }
@@ -427,6 +474,26 @@
         // 页面加载时更新体重列表和用户名
         updateWeightList();
         loadUserInfo();
+
+        // 分享功能
+        document.getElementById('shareBtn').addEventListener('click', async () => {
+            // 检查浏览器是否支持 Web Share API
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: '我的体重记录',
+                        text: '查看我的体重记录趋势！',
+                        url: window.location.href
+                    });
+                    console.log('分享成功');
+                } catch (error) {
+                    console.log('分享失败:', error);
+                }
+            } else {
+                // 如果浏览器不支持 Web Share API，可以提供一个后备方案
+                alert('您的浏览器不支持分享功能。请手动复制链接分享。');
+            }
+        });
     </script>
 </body>
 </html>
