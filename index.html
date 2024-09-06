@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>体重记录小程序</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        .header {
+            background-color: #2196F3;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 1.2em;
+        }
+        .version {
+            font-size: 0.8em;
+        }
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .weight-list-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .footer {
+            background-color: #2196F3;
+            color: white;
+            padding: 10px;
+        }
+        .footer-buttons {
+            display: flex;
+            justify-content: space-around;
+        }
+        .footer-buttons button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .footer-buttons button span {
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        .weight-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .weight-item {
+            background-color: #f1f1f1;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .weight-date {
+            display: block;
+            text-align: left;
+            margin-bottom: 5px;
+        }
+        .weight-value {
+            display: block;
+            text-align: right;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .weight-bmi {
+            display: block;
+            text-align: right;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .weight-spacer {
+            height: 10px;
+        }
+        .weight-actions {
+            text-align: right;
+        }
+        .weight-actions button {
+            background: none;
+            border: none;
+            color: #2196F3;
+            cursor: pointer;
+            margin-left: 10px;
+            font-size: 1.2em;
+        }
+        .weight-actions button:hover {
+            color: #0b7dda;
+        }
+        .bmi-underweight { color: blue; }
+        .bmi-normal { color: green; }
+        .bmi-overweight { color: orange; }
+        .bmi-obese { color: red; }
+        .pagination {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #f8f8f8;
+        }
+        .pagination button {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 0 10px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .pagination button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 400px;
+            border-radius: 5px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        #weightForm {
+            display: flex;
+            flex-direction: column;
+        }
+        #weightForm input {
+            margin-bottom: 10px;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        #weightForm button {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        #weightForm button:hover {
+            background-color: #0b7dda;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><span id="userName">用户</span>，欢迎回来</h1>
+        <span class="version">v1.0.0</span>
+    </div>
+    
+    <div class="content">
+        <div class="weight-list-container">
+            <ul id="weightList" class="weight-list">
+                <!-- 体重记录将在这里动态添加 -->
+            </ul>
+        </div>
+        <div class="pagination">
+            <button id="prevPage" onclick="changePage(-1)"><i class="fas fa-chevron-left"></i></button>
+            <button id="nextPage" onclick="changePage(1)"><i class="fas fa-chevron-right"></i></button>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <div class="footer-buttons">
+            <button>
+                <i class="fas fa-share-alt"></i>
+                <span>分享</span>
+            </button>
+            <button id="addWeightBtn">
+                <i class="fas fa-plus-circle"></i>
+                <span>新增体重</span>
+            </button>
+            <button id="myInfoBtn">
+                <i class="fas fa-user"></i>
+                <span>我的</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 添加"我的"模态框 -->
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>我的信息</h2>
+            <form id="userInfoForm">
+                <input type="text" id="name" placeholder="姓名" required>
+                <input type="number" id="age" placeholder="年龄" required>
+                <input type="number" id="height" placeholder="身高 (cm)" step="0.1" required>
+                <button type="submit">保存</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 新增体重模态框 -->
+    <div id="weightModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>新增体重</h2>
+            <form id="weightForm">
+                <input type="number" id="weight" placeholder="体重 (kg)" step="0.1" required>
+                <button type="submit">保存</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        var currentPage = 1;
+        var itemsPerPage = 5;
+
+        // 获取模态框元素
+        var weightModal = document.getElementById("weightModal");
+        var addWeightBtn = document.getElementById("addWeightBtn");
+        var closeWeightModal = weightModal.getElementsByClassName("close")[0];
+        var weightForm = document.getElementById("weightForm");
+
+        // 打开新增体重模态框
+        addWeightBtn.onclick = function() {
+            weightModal.style.display = "block";
+        }
+
+        // 关闭新增体重模态框
+        closeWeightModal.onclick = function() {
+            weightModal.style.display = "none";
+        }
+
+        // 点击模态框外部关闭模态框
+        window.onclick = function(event) {
+            if (event.target == weightModal) {
+                weightModal.style.display = "none";
+            }
+            if (event.target == myModal) {
+                myModal.style.display = "none";
+            }
+        }
+
+        // 保存新的体重记录
+        weightForm.onsubmit = function(e) {
+            e.preventDefault();
+            var weight = document.getElementById("weight").value;
+            var date = new Date().toLocaleString();
+            var userInfo = JSON.parse(localStorage.getItem("userInfo"));
+            var bmi = calculateBMI(weight, userInfo ? userInfo.height : 0);
+
+            var weightRecord = {date, weight, bmi};
+            var weightHistory = JSON.parse(localStorage.getItem("weightHistory")) || [];
+            weightHistory.unshift(weightRecord);
+            localStorage.setItem("weightHistory", JSON.stringify(weightHistory));
+
+            updateWeightList();
+            weightModal.style.display = "none";
+            weightForm.reset();
+        }
+
+        function calculateBMI(weight, height) {
+            if (!height) return "请先设置身高";
+            var heightInMeters = height / 100;
+            var bmi = weight / (heightInMeters * heightInMeters);
+            return bmi.toFixed(2);
+        }
+
+        function getBMIClass(bmi) {
+            if (bmi < 18.5) return "bmi-underweight";
+            if (bmi < 24) return "bmi-normal";
+            if (bmi < 28) return "bmi-overweight";
+            return "bmi-obese";
+        }
+
+        function updateWeightList() {
+            var weightHistory = JSON.parse(localStorage.getItem("weightHistory")) || [];
+            var startIndex = (currentPage - 1) * itemsPerPage;
+            var endIndex = startIndex + itemsPerPage;
+            var pageItems = weightHistory.slice(startIndex, endIndex);
+
+            var weightList = document.getElementById("weightList");
+            weightList.innerHTML = "";
+            pageItems.forEach(function(record, index) {
+                var li = document.createElement("li");
+                li.className = "weight-item";
+                li.innerHTML = `
+                    <span class="weight-date">${record.date}</span>
+                    <span class="weight-value">体重：${record.weight} kg</span>
+                    <span class="weight-bmi">BMI: <span class="${getBMIClass(record.bmi)}">${record.bmi}</span></span>
+                    <div class="weight-spacer"></div>
+                    <div class="weight-actions">
+                        <button onclick="editWeight(${startIndex + index})" title="编辑"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteWeight(${startIndex + index})" title="删除"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                `;
+                weightList.appendChild(li);
+            });
+
+            updatePaginationButtons(weightHistory.length);
+        }
+
+        function updatePaginationButtons(totalItems) {
+            var prevButton = document.getElementById("prevPage");
+            var nextButton = document.getElementById("nextPage");
+
+            prevButton.disabled = currentPage === 1;
+            nextButton.disabled = currentPage === Math.ceil(totalItems / itemsPerPage);
+        }
+
+        function changePage(direction) {
+            currentPage += direction;
+            updateWeightList();
+        }
+
+        // 获取模态框元素
+        var myModal = document.getElementById("myModal");
+        var myInfoBtn = document.getElementById("myInfoBtn");
+        var closeMyModal = myModal.getElementsByClassName("close")[0];
+        var userInfoForm = document.getElementById("userInfoForm");
+
+        // 打开模态框
+        myInfoBtn.onclick = function() {
+            myModal.style.display = "block";
+            loadUserInfo();
+        }
+
+        // 关闭模态框
+        closeMyModal.onclick = function() {
+            myModal.style.display = "none";
+        }
+
+        // 点击模态框外部关闭模态框
+        window.onclick = function(event) {
+            if (event.target == myModal) {
+                myModal.style.display = "none";
+            }
+        }
+
+        // 加载用户信息
+        function loadUserInfo() {
+            var userInfo = JSON.parse(localStorage.getItem("userInfo"));
+            if (userInfo) {
+                document.getElementById("name").value = userInfo.name || "";
+                document.getElementById("age").value = userInfo.age || "";
+                document.getElementById("height").value = userInfo.height || "";
+                document.getElementById("userName").textContent = userInfo.name || "用户";
+            }
+        }
+
+        // 保存用户信息
+        userInfoForm.onsubmit = function(e) {
+            e.preventDefault();
+            var name = document.getElementById("name").value;
+            var age = document.getElementById("age").value;
+            var height = document.getElementById("height").value;
+
+            var userInfo = {name, age, height};
+            localStorage.setItem("userInfo", JSON.stringify(userInfo));
+            
+            myModal.style.display = "none";
+            alert("信息已保存");
+        }
+
+        function editWeight(index) {
+            var weightHistory = JSON.parse(localStorage.getItem("weightHistory")) || [];
+            var record = weightHistory[index];
+            var newWeight = prompt("请输入新的体重 (kg):", record.weight);
+            if (newWeight !== null && newWeight !== "") {
+                var userInfo = JSON.parse(localStorage.getItem("userInfo"));
+                record.weight = parseFloat(newWeight);
+                record.bmi = calculateBMI(record.weight, userInfo ? userInfo.height : 0);
+                weightHistory[index] = record;
+                localStorage.setItem("weightHistory", JSON.stringify(weightHistory));
+                updateWeightList();
+            }
+        }
+
+        function deleteWeight(index) {
+            if (confirm("确定要删除这条记录吗？")) {
+                var weightHistory = JSON.parse(localStorage.getItem("weightHistory")) || [];
+                weightHistory.splice(index, 1);
+                localStorage.setItem("weightHistory", JSON.stringify(weightHistory));
+                updateWeightList();
+            }
+        }
+
+        // 页面加载时更新体重列表和用户名
+        updateWeightList();
+        loadUserInfo();
+    </script>
+</body>
+</html>
