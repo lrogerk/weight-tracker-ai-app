@@ -205,11 +205,12 @@
             flex: 1;
         }
         .form-row input {
-            flex: 2;
-            padding: 10px;
+            flex: 1.6;  // 从 2 改为 1.6，相当于缩小了 20%
+            padding: 20px 10px;  // 将上下内边距从 10px 增加到 20px
             border: 1px solid #ddd;
             border-radius: 3px;
             font-size: 16px;
+            line-height: 1.5;  // 增加行高
         }
         #saveUserInfo {
             background-color: #2196F3;
@@ -341,6 +342,7 @@
             weightHistory.unshift(weightRecord);
             localStorage.setItem("weightHistory", JSON.stringify(weightHistory));
 
+            currentPage = 1;  // 重置到第一页
             updateWeightList();
             weightModal.style.display = "none";
             weightForm.reset();
