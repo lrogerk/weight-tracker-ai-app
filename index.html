@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -142,12 +143,14 @@
         }
         .modal-content {
             background-color: #fefefe;
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
+            margin: 20px;
+            padding: 20px;
+            width: calc(100% - 40px);
+            height: calc(100% - 40px);
             display: flex;
             flex-direction: column;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
         .chart-container {
             flex: 1;
@@ -191,6 +194,7 @@
         #weightForm {
             display: flex;
             flex-direction: column;
+            padding: 0 20px;
         }
         #weightForm input {
             padding: 10px;
@@ -213,6 +217,8 @@
             justify-content: center;
             align-items: center;
             margin-left: auto;
+            align-self: flex-end;
+            margin-top: 20px;
         }
         #saveWeight:hover {
             background-color: #0b7dda;
@@ -221,7 +227,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
         .form-row label {
             flex: 1;
@@ -233,6 +239,8 @@
             border-radius: 3px;
             font-size: 16px;
             line-height: 1.5;
+            width: 100%;
+            box-sizing: border-box;
         }
         #saveUserInfo {
             background-color: #2196F3;
@@ -249,6 +257,8 @@
             align-items: center;
             margin-left: auto;
             margin-top: 15px;
+            align-self: flex-end;
+            margin-top: 20px;
         }
         #saveUserInfo:hover {
             background-color: #0b7dda;
@@ -275,6 +285,94 @@
             color: #000;
             text-decoration: none;
             cursor: pointer;
+        }
+        .data-actions {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+        }
+        .data-actions button {
+            padding: 10px 15px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .data-actions button:hover {
+            background-color: #0b7dda;
+        }
+        .info-box, .data-box {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+            margin-right: 20px; /* 添加右边空白 */
+        }
+        .info-box {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+            margin-right: 20px;
+            position: relative;
+            padding-bottom: 60px; /* 为保存按钮留出空间 */
+        }
+        .info-box .form-row {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+        .info-box .form-row label {
+            margin-bottom: 5px;
+        }
+        .info-box .form-row input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        #userInfoForm {
+            position: relative;
+        }
+        #saveUserInfo {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            position: absolute;
+            right: 15px;
+            bottom: 15px;
+        }
+        .data-buttons {
+            display: flex;
+            justify-content: space-between;
+        }
+        .data-btn {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            flex: 1;
+            justify-content: center;
+            margin: 0 5px;
+        }
+        .data-btn i {
+            margin-right: 5px;
+        }
+        .data-btn:hover, #saveUserInfo:hover {
+            background-color: #0b7dda;
         }
     </style>
 </head>
@@ -319,20 +417,25 @@
         <div class="modal-content">
             <span class="close">&times;</span>
             <h2>我的信息</h2>
-            <form id="userInfoForm">
-                <div class="form-row">
-                    <label for="name">姓名：</label>
-                    <input type="text" id="name" required>
+            <div class="info-box">
+                <form id="userInfoForm">
+                    <div class="form-row">
+                        <label for="name">姓名：</label>
+                        <input type="text" id="name" required>
+                    </div>
+                    <div class="form-row">
+                        <label for="height">身高（cm）：</label>
+                        <input type="number" id="height" step="0.1" required>
+                    </div>
+                </form>
+                <button type="button" id="saveUserInfo"><i class="fas fa-save"></i></button>
+            </div>
+            <h2>数据处理</h2>
+            <div class="data-box">
+                <div class="data-buttons">
+                    <button id="exportData" class="data-btn"><i class="fas fa-file-export"></i> 导出数据</button>
+                    <button id="importData" class="data-btn"><i class="fas fa-file-import"></i> 导入数据</button>
                 </div>
-                <div class="form-row">
-                    <label for="height">身高（cm）：</label>
-                    <input type="number" id="height" step="0.1" required>
-                </div>
-                <button type="submit" id="saveUserInfo"><i class="fas fa-save"></i></button>
-            </form>
-            <div class="data-actions">
-                <button id="exportData">导出数据</button>
-                <button id="importData">导入数据</button>
             </div>
         </div>
     </div>
@@ -602,6 +705,9 @@
                 chartInstance.destroy();
             }
 
+            // 按日期倒序排序
+            weightHistory.sort((a, b) => new Date(b.date) - new Date(a.date));
+
             // 计算总页数
             const totalPages = Math.ceil(weightHistory.length / recordsPerPage);
 
@@ -616,9 +722,9 @@
                 return (date.getFullYear() % 100).toString().padStart(2, '0') + '/' + 
                        (date.getMonth() + 1).toString().padStart(2, '0') + '/' + 
                        date.getDate().toString().padStart(2, '0');
-            }).reverse();
-            var weights = pageData.map(record => record.weight).reverse();
-            var bmis = pageData.map(record => record.bmi).reverse();
+            });
+            var weights = pageData.map(record => record.weight);
+            var bmis = pageData.map(record => record.bmi);
 
             // 创建新的图表实例
             chartInstance = new Chart(ctx, {
