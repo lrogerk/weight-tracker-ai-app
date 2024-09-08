@@ -198,6 +198,9 @@
         }
         #weightForm input {
             margin-bottom: 20px;
+            height: 50px; /* 增加高度 */
+            font-size: 18px; /* 增加字体大小以匹配更大的输入框 */
+            padding: 10px; /* 增加内边距 */
         }
         #saveWeight {
             margin-top: auto;
@@ -208,6 +211,7 @@
             border-radius: 5px;
             padding: 15px;
             margin-bottom: 20px;
+            margin-right: 20px; /* 添加右边空白 */
         }
         .info-box {
             position: relative;
@@ -221,22 +225,25 @@
         }
         .form-row label {
             margin-bottom: 5px;
+            font-size: 16px;
         }
         .form-row input {
             width: 100%;
-            padding: 8px;
+            height: 50px; /* 增加高度 */
+            padding: 10px;
             border: 1px solid #ddd;
             border-radius: 3px;
-            font-size: 14px;
+            font-size: 18px; /* 增加字体大小 */
+            box-sizing: border-box; /* 确保padding不会增加总宽度 */
         }
         #saveUserInfo {
             background-color: #2196F3;
             color: white;
             border: none;
-            padding: 10px;
+            padding: 12px 20px;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 18px;
             position: absolute;
             right: 15px;
             bottom: 15px;
@@ -264,6 +271,11 @@
         }
         .data-btn:hover, #saveUserInfo:hover {
             background-color: #0b7dda;
+        }
+        /* 确保模态框内容可以滚动 */
+        .modal-content {
+            max-height: 100vh;
+            overflow-y: auto;
         }
     </style>
 </head>
