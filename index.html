@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>体重记录小程序</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <script src="assets/chart.js" defer></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -76,36 +77,31 @@
             padding: 15px;
             border-radius: 5px;
         }
+        .weight-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
         .weight-date {
-            display: block;
-            text-align: left;
-            margin-bottom: 5px;
+            flex: 1;
         }
-        .weight-value {
-            display: block;
-            text-align: right;
+        .weight-info {
+            display: flex;
+            align-items: center;
+        }
+        .weight-value, .weight-bmi {
+            margin-right: 15px;
             font-weight: bold;
-            margin-bottom: 5px;
-        }
-        .weight-bmi {
-            display: block;
-            text-align: right;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        .weight-spacer {
-            height: 10px;
-        }
-        .weight-actions {
-            text-align: right;
         }
         .weight-actions button {
             background: none;
             border: none;
             color: #2196F3;
             cursor: pointer;
-            margin-left: 10px;
             font-size: 1.2em;
+            padding: 0;
+            margin-left: 10px;
         }
         .weight-actions button:hover {
             color: #0b7dda;
@@ -231,12 +227,105 @@
         #saveUserInfo:hover {
             background-color: #0b7dda;
         }
+        
+        #chartBtn {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin-right: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        
+        #chartModal .modal-content {
+            width: 90%;
+            max-width: none;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .chart-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #weightChart {
+            flex: 1;
+            width: 100%;
+            height: auto !important; /* 防止图表高度不断增加 */
+        }
+        .chart-pagination.blue-background {
+            background-color: #2196F3;
+            padding: 10px 0;
+            border-radius: 5px 5px 0 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            bottom: 20px; /* 从40px改为20px,使翻页栏更靠近底部 */
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+        .chart-pagination button {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            margin: 0 5px;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        .chart-pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .chart-pagination button:hover:not(:disabled) {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        #chartPageInfo {
+            font-size: 14px;
+            margin: 0 15px;
+            color: white;
+        }
+        .data-actions {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-around;
+        }
+        .data-actions button {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .data-actions button:hover {
+            background-color: #0b7dda;
+        }
+        #chartModal .close {
+            color: #333;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 10px;
+        }
+        #chartModal .close:hover,
+        #chartModal .close:focus {
+            color: #000;
+            text-decoration: none;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <h1><span id="userName">用户</span>，欢迎回来</h1>
-        <span class="version">v1.0.0</span>
+        <span class="version">v1.10</span>
     </div>
     
     <div class="content">
@@ -246,6 +335,7 @@
             </ul>
         </div>
         <div class="pagination">
+            <button id="chartBtn"><i class="fas fa-chart-bar"></i></button>
             <button id="prevPage" onclick="changePage(-1)"><i class="fas fa-chevron-left"></i></button>
             <button id="nextPage" onclick="changePage(1)"><i class="fas fa-chevron-right"></i></button>
         </div>
@@ -284,6 +374,10 @@
                 </div>
                 <button type="submit" id="saveUserInfo"><i class="fas fa-save"></i></button>
             </form>
+            <div class="data-actions">
+                <button id="exportData">导出数据</button>
+                <button id="importData">导入数据</button>
+            </div>
         </div>
     </div>
 
@@ -299,9 +393,22 @@
         </div>
     </div>
 
+    <!-- 图表模态框 -->
+    <div id="chartModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeChartModal()">&times;</span>
+            <canvas id="weightChart"></canvas>
+            <div class="chart-pagination blue-background">
+                <button id="prevChartPage" onclick="changeChartPage(-1)"><i class="fas fa-chevron-left"></i></button>
+                <span id="chartPageInfo"></span>
+                <button id="nextChartPage" onclick="changeChartPage(1)"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+    </div>
+
     <script>
         var currentPage = 1;
-        var itemsPerPage = 3;
+        var itemsPerPage = 5; // 将这个变量从 3 改为 5
 
         // 获取模态框元素
         var weightModal = document.getElementById("weightModal");
@@ -326,6 +433,10 @@
             }
             if (event.target == myModal) {
                 myModal.style.display = "none";
+            }
+            var chartModal = document.getElementById("chartModal");
+            if (event.target == chartModal) {
+                closeChartModal();
             }
         }
 
@@ -374,13 +485,15 @@
                 var li = document.createElement("li");
                 li.className = "weight-item";
                 li.innerHTML = `
-                    <span class="weight-date">${record.date}</span>
-                    <span class="weight-value">体重：${record.weight} kg</span>
-                    <span class="weight-bmi">BMI: <span class="${getBMIClass(record.bmi)}">${record.bmi}</span></span>
-                    <div class="weight-spacer"></div>
-                    <div class="weight-actions">
-                        <button onclick="editWeight(${startIndex + index})" title="编辑"><i class="fas fa-edit"></i></button>
-                        <button onclick="deleteWeight(${startIndex + index})" title="删除"><i class="fas fa-trash-alt"></i></button>
+                    <div class="weight-row">
+                        <span class="weight-date">${record.date}</span>
+                    </div>
+                    <div class="weight-row">
+                        <div class="weight-info">
+                            <span class="weight-value">体重：${record.weight} kg</span>
+                            <span class="weight-bmi">BMI: <span class="${getBMIClass(record.bmi)}">${record.bmi}</span></span>
+                        </div>
+                        <button onclick="deleteWeight(${startIndex + index})" title="删除" style="color: #2196F3;"><i class="fas fa-trash-alt"></i></button>
                     </div>
                 `;
                 weightList.appendChild(li);
@@ -419,13 +532,6 @@
             myModal.style.display = "none";
         }
 
-        // 点击模态框外部关闭模态框
-        window.onclick = function(event) {
-            if (event.target == myModal) {
-                myModal.style.display = "none";
-            }
-        }
-
         // 加载用户信息
         function loadUserInfo() {
             var userInfo = JSON.parse(localStorage.getItem("userInfo"));
@@ -450,25 +556,18 @@
             alert("信息已保存");
         }
 
-        function editWeight(index) {
-            var weightHistory = JSON.parse(localStorage.getItem("weightHistory")) || [];
-            var record = weightHistory[index];
-            var newWeight = prompt("请输入新的体重 (kg):", record.weight);
-            if (newWeight !== null && newWeight !== "") {
-                var userInfo = JSON.parse(localStorage.getItem("userInfo"));
-                record.weight = parseFloat(newWeight);
-                record.bmi = calculateBMI(record.weight, userInfo ? userInfo.height : 0);
-                weightHistory[index] = record;
-                localStorage.setItem("weightHistory", JSON.stringify(weightHistory));
-                updateWeightList();
-            }
-        }
-
         function deleteWeight(index) {
             if (confirm("确定要删除这条记录吗？")) {
                 var weightHistory = JSON.parse(localStorage.getItem("weightHistory")) || [];
                 weightHistory.splice(index, 1);
                 localStorage.setItem("weightHistory", JSON.stringify(weightHistory));
+                
+                // 检查当前页是否还有数据，如果没有则回到上一页
+                var totalPages = Math.ceil(weightHistory.length / itemsPerPage);
+                if (currentPage > totalPages) {
+                    currentPage = Math.max(1, totalPages);
+                }
+                
                 updateWeightList();
             }
         }
@@ -496,6 +595,240 @@
                 alert('您的浏览器不支持分享功能。请手动复制链接分享。');
             }
         });
+
+        let chartInstance = null; // 在全局范围内声明一个变量来存储图表实例
+        let currentChartPage = 1;
+        const recordsPerPage = 10; // 将每页显示的记录数改为10
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js is not loaded');
+                alert('图表库加载失败，请检查文件路径');
+                return;
+            }
+
+            var chartBtn = document.getElementById('chartBtn');
+            if (chartBtn) {
+                chartBtn.addEventListener('click', function() {
+                    console.log('Chart button clicked');
+                    currentChartPage = 1; // 重置页码
+                    showChart();
+                });
+                console.log('Chart button listener added');
+            } else {
+                console.error('Chart button not found');
+            }
+        });
+
+        function showChart() {
+            console.log('showChart function called');
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js is not loaded');
+                alert('图表库加载失败，请刷新页面重试');
+                return;
+            }
+            
+            var weightHistory = JSON.parse(localStorage.getItem("weightHistory")) || [];
+            console.log('Weight history:', weightHistory);
+
+            if (weightHistory.length === 0) {
+                alert('没有体重记录可以显示。');
+                return;
+            }
+
+            var chartModal = document.getElementById("chartModal");
+            var ctx = document.getElementById('weightChart').getContext('2d');
+
+            // 如果已经存在图表实例，先销毁它
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            // 计算总页数
+            const totalPages = Math.ceil(weightHistory.length / recordsPerPage);
+
+            // 获取当前页的数据
+            const startIndex = (currentChartPage - 1) * recordsPerPage;
+            const endIndex = startIndex + recordsPerPage;
+            const pageData = weightHistory.slice(startIndex, endIndex);
+
+            // 准备数据
+            var labels = pageData.map(record => {
+                let date = new Date(record.date);
+                return (date.getFullYear() % 100).toString().padStart(2, '0') + '/' + 
+                       (date.getMonth() + 1).toString().padStart(2, '0') + '/' + 
+                       date.getDate().toString().padStart(2, '0');
+            }).reverse();
+            var weights = pageData.map(record => record.weight).reverse();
+            var bmis = pageData.map(record => record.bmi).reverse();
+
+            // 创建新的图表实例
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '体重 (kg)',
+                        data: weights,
+                        backgroundColor: bmis.map(bmi => getBMIColor(bmi)),
+                        borderColor: 'rgba(0, 0, 0, 0.1)',
+                        borderWidth: 1
+                    }, {
+                        label: '体重趋势',
+                        data: weights,
+                        type: 'line',
+                        fill: false,
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45,
+                                padding: 10,
+                                font: {
+                                    size: 10
+                                },
+                                callback: function(value, index, values) {
+                                    // 每隔2个显示1次日期
+                                    if (index % 2 === 0) {
+                                        return labels[index];
+                                    }
+                                    return '';
+                                }
+                            }
+                        },
+                        y: {
+                            beginAtZero: false
+                        }
+                    },
+                    layout: {
+                        padding: {
+                            left: 10,
+                            right: 10,
+                            top: 0,
+                            bottom: 40
+                        }
+                    }
+                }
+            });
+
+            // 更新页面信息
+            updateChartPageInfo(totalPages);
+
+            chartModal.style.display = "block";
+        }
+
+        function updateChartPageInfo(totalPages) {
+            console.log('Updating chart page info');
+            const pageInfo = document.getElementById('chartPageInfo');
+            const prevButton = document.getElementById('prevChartPage');
+            const nextButton = document.getElementById('nextChartPage');
+
+            if (!pageInfo || !prevButton || !nextButton) {
+                console.error('Some pagination elements are missing');
+                return;
+            }
+
+            pageInfo.textContent = `第 ${currentChartPage} 页，共 ${totalPages} 页`;
+            console.log('Page info updated:', pageInfo.textContent);
+
+            prevButton.disabled = currentChartPage === 1;
+            nextButton.disabled = currentChartPage === totalPages;
+
+            console.log('Prev button disabled:', prevButton.disabled);
+            console.log('Next button disabled:', nextButton.disabled);
+        }
+
+        function changeChartPage(direction) {
+            const weightHistory = JSON.parse(localStorage.getItem("weightHistory")) || [];
+            const totalPages = Math.ceil(weightHistory.length / recordsPerPage);
+
+            currentChartPage += direction;
+            if (currentChartPage < 1) currentChartPage = 1;
+            if (currentChartPage > totalPages) currentChartPage = totalPages;
+
+            showChart();
+        }
+
+        function closeChartModal() {
+            var chartModal = document.getElementById("chartModal");
+            chartModal.style.display = "none";
+            if (chartInstance) {
+                chartInstance.destroy();
+                chartInstance = null;
+            }
+            currentChartPage = 1; // 重置页码
+            window.removeEventListener('resize', resizeChart);
+        }
+
+        function getBMIColor(bmi) {
+            if (bmi < 18.5) return 'rgba(0, 0, 255, 0.5)';  // 蓝色
+            if (bmi < 24) return 'rgba(0, 255, 0, 0.5)';    // 绿色
+            if (bmi < 28) return 'rgba(255, 165, 0, 0.5)';  // 橙色
+            return 'rgba(255, 0, 0, 0.5)';                  // 红色
+        }
+
+        window.addEventListener('error', function (e) {
+            if (e.filename.includes('chart.js') && e.message.includes('source map')) {
+                console.warn('Ignored source map error for Chart.js');
+                return true;  // 防止错误传播
+            }
+        }, true);
+
+        document.getElementById('exportData').addEventListener('click', function() {
+            var weightHistory = JSON.parse(localStorage.getItem("weightHistory")) || [];
+            var userInfo = JSON.parse(localStorage.getItem("userInfo")) || {};
+            var exportData = {
+                weightHistory: weightHistory,
+                userInfo: userInfo
+            };
+            var exportString = JSON.stringify(exportData);
+            
+            navigator.clipboard.writeText(exportString).then(function() {
+                alert('数据已成功复制到剪贴板');
+            }, function() {
+                alert('复制到剪贴板失败，请检查浏览器权限');
+            });
+        });
+
+        document.getElementById('importData').addEventListener('click', function() {
+            navigator.clipboard.readText().then(function(text) {
+                try {
+                    var importData = JSON.parse(text);
+                    if (importData.weightHistory && importData.userInfo) {
+                        localStorage.setItem("weightHistory", JSON.stringify(importData.weightHistory));
+                        localStorage.setItem("userInfo", JSON.stringify(importData.userInfo));
+                        alert('数据导入成功');
+                        loadUserInfo(); // 更新显示的用户信息
+                        updateWeightList(); // 更新体重记录列表
+                    } else {
+                        throw new Error('Invalid data format');
+                    }
+                } catch (error) {
+                    alert('导入失败，请确保粘贴的是有效的导出数据');
+                }
+            }, function() {
+                alert('从剪贴板读取失败，请检查浏览器权限');
+            });
+        });
+
+        function resizeChart() {
+            if (chartInstance) {
+                chartInstance.resize();
+            }
+        }
+
+        // 在窗口大小改变时调用 resizeChart
+        window.addEventListener('resize', resizeChart);
     </script>
 </body>
 </html>
