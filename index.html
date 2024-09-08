@@ -152,60 +152,6 @@
             box-sizing: border-box;
             overflow-y: auto;
         }
-        .chart-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        #weightChart {
-            flex: 1;
-            width: 100%;
-            height: auto !important;
-        }
-        .chart-pagination.blue-background {
-            background-color: #2196F3;
-            padding: 10px 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .chart-pagination button {
-            background-color: transparent;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            margin: 0 10px;
-            cursor: pointer;
-            font-size: 18px;
-        }
-        #chartPageInfo {
-            color: white;
-            font-size: 14px;
-        }
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            padding: 10px;
-        }
-        #weightForm {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-        #weightForm input {
-            margin-bottom: 20px;
-            height: 50px; /* 增加高度 */
-            font-size: 18px; /* 增加字体大小以匹配更大的输入框 */
-            padding: 10px; /* 增加内边距 */
-        }
-        #saveWeight {
-            margin-top: auto;
-            align-self: flex-end;
-        }
         .info-box, .data-box {
             border: 1px solid #ddd;
             border-radius: 5px;
@@ -248,47 +194,15 @@
             right: 15px;
             bottom: 15px;
         }
-        .data-buttons {
-            display: flex;
-            justify-content: space-between;
-        }
-        .data-btn {
-            background-color: #2196F3;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            display: inline-flex;
-            align-items: center;
-            flex: 1;
-            justify-content: center;
-            margin: 0 5px;
-        }
-        .data-btn i {
-            margin-right: 5px;
-        }
-        .data-btn:hover, #saveUserInfo:hover {
-            background-color: #0b7dda;
-        }
-        /* 确保模态框内容可以滚动 */
-        .modal-content {
-            max-height: 100vh;
-            overflow-y: auto;
-        }
-
         /* 调整 "新增体重" 模态框的样式 */
         #weightModal .modal-content {
             position: relative;
             padding-bottom: 60px; /* 为保存按钮留出空间 */
         }
-
         #weightForm {
             display: flex;
             flex-direction: column;
         }
-
         #weightForm input {
             width: 100%;
             height: 50px;
@@ -299,7 +213,6 @@
             box-sizing: border-box;
             margin-bottom: 20px;
         }
-
         #saveWeight {
             background-color: #2196F3;
             color: white;
@@ -316,31 +229,95 @@
             justify-content: center;
             align-items: center;
             padding: 0; /* 移除内边距 */
+            pointer-events: auto; /* 确保按钮可以接收点击事件 */
+            z-index: 1; /* 确保按钮在其他元素之上 */
         }
-
         #saveWeight:hover {
             background-color: #0b7dda;
         }
-
         #saveWeight i {
             margin: 0; /* 移除图标的外边距 */
         }
-
-        /* 统一 "我的信息" 和 "新增体重" 的保存按钮样式 */
-        #saveUserInfo, #saveWeight {
+        .chart-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #weightChart {
+            flex: 1;
+            width: 100%;
+            height: auto !important;
+        }
+        .chart-pagination.blue-background {
+            background-color: #2196F3;
+            padding: 10px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .chart-pagination button {
+            background-color: transparent;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 0 10px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+        #chartPageInfo {
+            color: white;
+            font-size: 14px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 10px;
+        }
+        .close:hover,
+        .close:focus {
+            color: #000;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .data-box {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+            margin-right: 20px;
+        }
+        .data-buttons {
+            display: flex;
+            justify-content: space-between;
+        }
+        .data-btn {
             background-color: #2196F3;
             color: white;
             border: none;
             padding: 12px 20px;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 18px;
-            position: absolute;
-            right: 15px;
-            bottom: 15px;
+            font-size: 16px;
+            flex: 1;
+            margin: 0 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-
-        #saveUserInfo:hover, #saveWeight:hover {
+        .data-btn:first-child {
+            margin-left: 0;
+        }
+        .data-btn:last-child {
+            margin-right: 0;
+        }
+        .data-btn i {
+            margin-right: 8px;
+        }
+        .data-btn:hover {
             background-color: #0b7dda;
         }
     </style>
@@ -416,8 +393,8 @@
             <h2>新增体重</h2>
             <form id="weightForm">
                 <input type="number" id="weight" placeholder="体重 (kg)" step="0.1" required>
+                <button type="submit" id="saveWeight"><i class="fas fa-save"></i></button>
             </form>
-            <button type="button" id="saveWeight"><i class="fas fa-save"></i></button>
         </div>
     </div>
 
