@@ -142,12 +142,43 @@
         }
         .modal-content {
             background-color: #fefefe;
-            margin: 15% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-            max-width: 400px;
-            border-radius: 5px;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .chart-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #weightChart {
+            flex: 1;
+            width: 100%;
+            height: auto !important;
+        }
+        .chart-pagination.blue-background {
+            background-color: #2196F3;
+            padding: 10px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .chart-pagination button {
+            background-color: transparent;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 0 10px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+        #chartPageInfo {
+            color: white;
+            font-size: 14px;
         }
         .close {
             color: #aaa;
@@ -155,12 +186,7 @@
             font-size: 28px;
             font-weight: bold;
             cursor: pointer;
-        }
-        .close:hover,
-        .close:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
+            padding: 10px;
         }
         #weightForm {
             display: flex;
@@ -201,12 +227,12 @@
             flex: 1;
         }
         .form-row input {
-            flex: 1.6;  // 从 2 改为 1.6，相当于缩小了 20%
-            padding: 20px 10px;  // 将上下内边距从 10px 增加到 20px
+            flex: 1.6;
+            padding: 20px 10px;
             border: 1px solid #ddd;
             border-radius: 3px;
             font-size: 16px;
-            line-height: 1.5;  // 增加行高
+            line-height: 1.5;
         }
         #saveUserInfo {
             background-color: #2196F3;
@@ -227,7 +253,6 @@
         #saveUserInfo:hover {
             background-color: #0b7dda;
         }
-        
         #chartBtn {
             background-color: #2196F3;
             color: white;
@@ -236,75 +261,6 @@
             margin-right: 10px;
             cursor: pointer;
             border-radius: 5px;
-        }
-        
-        #chartModal .modal-content {
-            width: 90%;
-            max-width: none;
-            height: 80vh;
-            display: flex;
-            flex-direction: column;
-        }
-        .chart-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        #weightChart {
-            flex: 1;
-            width: 100%;
-            height: auto !important; /* 防止图表高度不断增加 */
-        }
-        .chart-pagination.blue-background {
-            background-color: #2196F3;
-            padding: 10px 0;
-            border-radius: 5px 5px 0 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: absolute;
-            bottom: 20px; /* 从40px改为20px,使翻页栏更靠近底部 */
-            left: 0;
-            right: 0;
-            z-index: 1000;
-        }
-        .chart-pagination button {
-            background-color: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            margin: 0 5px;
-            cursor: pointer;
-            border-radius: 50%;
-        }
-        .chart-pagination button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        .chart-pagination button:hover:not(:disabled) {
-            background-color: rgba(255, 255, 255, 0.2);
-        }
-        #chartPageInfo {
-            font-size: 14px;
-            margin: 0 15px;
-            color: white;
-        }
-        .data-actions {
-            margin-top: 20px;
-            display: flex;
-            justify-content: space-around;
-        }
-        .data-actions button {
-            background-color: #2196F3;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-        .data-actions button:hover {
-            background-color: #0b7dda;
         }
         #chartModal .close {
             color: #333;
@@ -397,7 +353,9 @@
     <div id="chartModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeChartModal()">&times;</span>
-            <canvas id="weightChart"></canvas>
+            <div class="chart-container">
+                <canvas id="weightChart"></canvas>
+            </div>
             <div class="chart-pagination blue-background">
                 <button id="prevChartPage" onclick="changeChartPage(-1)"><i class="fas fa-chevron-left"></i></button>
                 <span id="chartPageInfo"></span>
@@ -693,7 +651,6 @@
                             ticks: {
                                 maxRotation: 45,
                                 minRotation: 45,
-                                padding: 10,
                                 font: {
                                     size: 10
                                 },
@@ -707,15 +664,27 @@
                             }
                         },
                         y: {
-                            beginAtZero: false
+                            beginAtZero: false,
+                            position: 'left',
+                            ticks: {
+                                font: {
+                                    size: 10
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
                         }
                     },
                     layout: {
                         padding: {
                             left: 10,
                             right: 10,
-                            top: 0,
-                            bottom: 40
+                            top: 20,
+                            bottom: 10
                         }
                     }
                 }
