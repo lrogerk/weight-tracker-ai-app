@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -320,6 +321,11 @@
         .data-btn:hover {
             background-color: #0b7dda;
         }
+        .chart-container {
+            position: relative;
+            height: 60vh;
+            width: 100%;
+        }
     </style>
 </head>
 <body>
@@ -392,7 +398,7 @@
             <span class="close">&times;</span>
             <h2>新增体重</h2>
             <form id="weightForm">
-                <input type="number" id="weight" placeholder="体重 (kg)" step="0.1" required>
+                <input type="number" id="weight" placeholder="体重 (kg)" step="any" required>
                 <button type="submit" id="saveWeight"><i class="fas fa-save"></i></button>
             </form>
         </div>
@@ -415,7 +421,9 @@
 
     <script>
         var currentPage = 1;
-        var itemsPerPage = 5; // 将这个变量从 3 改为 5
+        var itemsPerPage = 5;
+        var recordsPerPage = 20;
+        var currentChartPage = 1;
 
         // 获取模态框元素
         var weightModal = document.getElementById("weightModal");
@@ -447,30 +455,54 @@
             }
         }
 
+        // 验证体重输入
+        function validateWeight(input) {
+            var weight = parseFloat(input.value);
+            if (isNaN(weight) || weight <= 0 || weight > 1000) {
+                input.setCustomValidity('请输入一个有效的体重值（0-1000之间）');
+            } else {
+                input.setCustomValidity('');
+            }
+        }
+
         // 保存新的体重记录
         weightForm.onsubmit = function(e) {
             e.preventDefault();
-            var weight = document.getElementById("weight").value;
-            var date = new Date().toLocaleString();
-            var userInfo = JSON.parse(localStorage.getItem("userInfo"));
-            var bmi = calculateBMI(weight, userInfo ? userInfo.height : 0);
+            var weightInput = document.getElementById("weight");
+            
+            // 验证输入
+            validateWeight(weightInput);
+            
+            if (weightInput.checkValidity()) {
+                // 将输入的体重四舍五入到1位小数
+                var weight = Number(weightInput.value).toFixed(1);
+                
+                var date = new Date().toLocaleString();
+                var userInfo = JSON.parse(localStorage.getItem("userInfo"));
+                var bmi = calculateBMI(weight, userInfo ? userInfo.height : 0);
 
-            var weightRecord = {date, weight, bmi};
-            var weightHistory = JSON.parse(localStorage.getItem("weightHistory")) || [];
-            weightHistory.unshift(weightRecord);
-            localStorage.setItem("weightHistory", JSON.stringify(weightHistory));
+                var weightRecord = {date, weight, bmi};
+                var weightHistory = JSON.parse(localStorage.getItem("weightHistory")) || [];
+                weightHistory.unshift(weightRecord);
+                localStorage.setItem("weightHistory", JSON.stringify(weightHistory));
 
-            currentPage = 1;  // 重置到第一页
-            updateWeightList();
-            weightModal.style.display = "none";
-            weightForm.reset();
+                currentPage = 1;  // 重置到第一页
+                updateWeightList();
+                weightModal.style.display = "none";
+                weightForm.reset();
+            }
         }
+
+        // 在输入字段上添加验证
+        document.getElementById("weight").addEventListener('input', function() {
+            validateWeight(this);
+        });
 
         function calculateBMI(weight, height) {
             if (!height) return "请先设置身高";
             var heightInMeters = height / 100;
             var bmi = weight / (heightInMeters * heightInMeters);
-            return bmi.toFixed(2);
+            return bmi.toFixed(2);  // BMI 保留两位小数
         }
 
         function getBMIClass(bmi) {
@@ -497,7 +529,7 @@
                     </div>
                     <div class="weight-row">
                         <div class="weight-info">
-                            <span class="weight-value">体重：${record.weight} kg</span>
+                            <span class="weight-value">体重：${Number(record.weight).toFixed(1)} kg</span>
                             <span class="weight-bmi">BMI: <span class="${getBMIClass(record.bmi)}">${record.bmi}</span></span>
                         </div>
                         <button onclick="deleteWeight(${startIndex + index})" title="删除" style="color: #2196F3;"><i class="fas fa-trash-alt"></i></button>
@@ -604,8 +636,6 @@
         });
 
         let chartInstance = null; // 在全局范围内声明一个变量来存储图表实例
-        let currentChartPage = 1;
-        const recordsPerPage = 10; // 将每页显示的记录数改为10
 
         document.addEventListener('DOMContentLoaded', function() {
             if (typeof Chart === 'undefined') {
@@ -627,30 +657,16 @@
             }
         });
 
+        function getBMIColor(bmi) {
+            if (bmi < 18.5) return 'rgba(0, 0, 255, 0.6)'; // 蓝色，偏瘦
+            if (bmi < 24) return 'rgba(0, 255, 0, 0.6)';   // 绿色，正常
+            if (bmi < 28) return 'rgba(255, 165, 0, 0.6)'; // 橙色，过重
+            return 'rgba(255, 0, 0, 0.6)';                 // 红色，肥胖
+        }
+
         function showChart() {
-            console.log('showChart function called');
-            if (typeof Chart === 'undefined') {
-                console.error('Chart.js is not loaded');
-                alert('图表库加载失败，请刷新页面重试');
-                return;
-            }
-            
             var weightHistory = JSON.parse(localStorage.getItem("weightHistory")) || [];
-            console.log('Weight history:', weightHistory);
-
-            if (weightHistory.length === 0) {
-                alert('没有体重记录可以显示。');
-                return;
-            }
-
-            var chartModal = document.getElementById("chartModal");
-            var ctx = document.getElementById('weightChart').getContext('2d');
-
-            // 如果已经存在图表实例，先销毁它
-            if (chartInstance) {
-                chartInstance.destroy();
-            }
-
+            
             // 按日期倒序排序
             weightHistory.sort((a, b) => new Date(b.date) - new Date(a.date));
 
@@ -660,36 +676,46 @@
             // 获取当前页的数据
             const startIndex = (currentChartPage - 1) * recordsPerPage;
             const endIndex = startIndex + recordsPerPage;
-            const pageData = weightHistory.slice(startIndex, endIndex);
+            let pageData = weightHistory.slice(startIndex, endIndex);
 
-            // 准备数据
-            var labels = pageData.map(record => {
+            // 准备数据，始终填充20个位置
+            var labels = new Array(recordsPerPage).fill('');
+            var weights = new Array(recordsPerPage).fill(null);
+            var bmis = new Array(recordsPerPage).fill(null);
+            var backgroundColors = new Array(recordsPerPage).fill('rgba(0,0,0,0)');
+
+            pageData.forEach((record, index) => {
                 let date = new Date(record.date);
-                return (date.getFullYear() % 100).toString().padStart(2, '0') + '/' + 
-                       (date.getMonth() + 1).toString().padStart(2, '0') + '/' + 
-                       date.getDate().toString().padStart(2, '0');
+                labels[index] = `${date.getFullYear() % 100}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}`;
+                weights[index] = Number(record.weight);
+                bmis[index] = Number(record.bmi);
+                backgroundColors[index] = getBMIColor(record.bmi);
             });
-            var weights = pageData.map(record => record.weight);
-            var bmis = pageData.map(record => record.bmi);
 
-            // 创建新的图表实例
-            chartInstance = new Chart(ctx, {
+            var ctx = document.getElementById('weightChart').getContext('2d');
+            if (window.myChart) {
+                window.myChart.destroy();
+            }
+            window.myChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels,
                     datasets: [{
                         label: '体重 (kg)',
                         data: weights,
-                        backgroundColor: bmis.map(bmi => getBMIColor(bmi)),
-                        borderColor: 'rgba(0, 0, 0, 0.1)',
-                        borderWidth: 1
+                        backgroundColor: backgroundColors,
+                        borderColor: backgroundColors,
+                        borderWidth: 1,
+                        yAxisID: 'y-axis-weight',
+                        maxBarThickness: 10 // 限制柱子的最大宽度
                     }, {
-                        label: '体重趋势',
-                        data: weights,
+                        label: 'BMI',
+                        data: bmis,
                         type: 'line',
                         fill: false,
-                        borderColor: 'rgb(75, 192, 192)',
-                        tension: 0.1
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                        yAxisID: 'y-axis-bmi'
                     }]
                 },
                 options: {
@@ -698,30 +724,46 @@
                     scales: {
                         x: {
                             grid: {
-                                display: false
+                                display: false // 去掉背景网格线
                             },
                             ticks: {
+                                autoSkip: false,
                                 maxRotation: 45,
                                 minRotation: 45,
-                                font: {
-                                    size: 10
-                                },
                                 callback: function(value, index, values) {
-                                    // 每隔2个显示1次日期
-                                    if (index % 2 === 0) {
+                                    // 只显示每隔几个的日期标签
+                                    if (index % 4 === 0 && labels[index] !== '') {
                                         return labels[index];
                                     }
                                     return '';
+                                },
+                                font: {
+                                    size: 10 // 减小字体大小
                                 }
                             }
                         },
-                        y: {
-                            beginAtZero: false,
+                        'y-axis-weight': {
+                            type: 'linear',
                             position: 'left',
-                            ticks: {
-                                font: {
-                                    size: 10
-                                }
+                            title: {
+                                display: true,
+                                text: '体重 (kg)'
+                            },
+                            beginAtZero: false,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)' // 淡化网格线
+                            }
+                        },
+                        'y-axis-bmi': {
+                            type: 'linear',
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'BMI'
+                            },
+                            beginAtZero: false,
+                            grid: {
+                                display: false // 不显示右侧BMI的网格线
                             }
                         }
                     },
@@ -731,79 +773,36 @@
                             position: 'top'
                         }
                     },
-                    layout: {
-                        padding: {
-                            left: 10,
-                            right: 10,
-                            top: 20,
-                            bottom: 10
-                        }
-                    }
+                    barPercentage: 0.8,
+                    categoryPercentage: 0.9
                 }
             });
 
-            // 更新页面信息
-            updateChartPageInfo(totalPages);
+            // 更新分页信息
+            document.getElementById('chartPageInfo').textContent = `第 ${currentChartPage} 页，共 ${totalPages} 页`;
+            
+            // 更新分页按钮状态
+            document.getElementById('prevChartPage').disabled = currentChartPage === 1;
+            document.getElementById('nextChartPage').disabled = currentChartPage === totalPages;
 
-            chartModal.style.display = "block";
+            document.getElementById('chartModal').style.display = "block";
         }
 
-        function updateChartPageInfo(totalPages) {
-            console.log('Updating chart page info');
-            const pageInfo = document.getElementById('chartPageInfo');
-            const prevButton = document.getElementById('prevChartPage');
-            const nextButton = document.getElementById('nextChartPage');
-
-            if (!pageInfo || !prevButton || !nextButton) {
-                console.error('Some pagination elements are missing');
-                return;
-            }
-
-            pageInfo.textContent = `第 ${currentChartPage} 页，共 ${totalPages} 页`;
-            console.log('Page info updated:', pageInfo.textContent);
-
-            prevButton.disabled = currentChartPage === 1;
-            nextButton.disabled = currentChartPage === totalPages;
-
-            console.log('Prev button disabled:', prevButton.disabled);
-            console.log('Next button disabled:', nextButton.disabled);
-        }
-
+        // 添加翻页功能
         function changeChartPage(direction) {
-            const weightHistory = JSON.parse(localStorage.getItem("weightHistory")) || [];
+            var weightHistory = JSON.parse(localStorage.getItem("weightHistory")) || [];
             const totalPages = Math.ceil(weightHistory.length / recordsPerPage);
-
+            
             currentChartPage += direction;
             if (currentChartPage < 1) currentChartPage = 1;
             if (currentChartPage > totalPages) currentChartPage = totalPages;
-
+            
             showChart();
         }
 
         function closeChartModal() {
-            var chartModal = document.getElementById("chartModal");
-            chartModal.style.display = "none";
-            if (chartInstance) {
-                chartInstance.destroy();
-                chartInstance = null;
-            }
-            currentChartPage = 1; // 重置页码
-            window.removeEventListener('resize', resizeChart);
+            document.getElementById('chartModal').style.display = 'none';
         }
-
-        function getBMIColor(bmi) {
-            if (bmi < 18.5) return 'rgba(0, 0, 255, 0.5)';  // 蓝色
-            if (bmi < 24) return 'rgba(0, 255, 0, 0.5)';    // 绿色
-            if (bmi < 28) return 'rgba(255, 165, 0, 0.5)';  // 橙色
-            return 'rgba(255, 0, 0, 0.5)';                  // 红色
-        }
-
-        window.addEventListener('error', function (e) {
-            if (e.filename.includes('chart.js') && e.message.includes('source map')) {
-                console.warn('Ignored source map error for Chart.js');
-                return true;  // 防止错误传播
-            }
-        }, true);
 
         document.getElementById('exportData').addEventListener('click', function() {
             var weightHistory = JSON.parse(localStorage.getItem("weightHistory")) || [];
